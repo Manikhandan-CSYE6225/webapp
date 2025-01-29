@@ -14,6 +14,11 @@ module.exports = (sequelize, DataTypes) => {
     }, {
         tableName: 'HealthCheck',
         timestamps: false,
+        hooks: {
+            beforeCreate: (healthCheck) => {
+                healthCheck.datetime = new Date();
+            },
+        },
     });
 
     return HealthCheck;
