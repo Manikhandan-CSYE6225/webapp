@@ -7,7 +7,7 @@
     "test": "jest"
   },
   "jest": {
-    "testMatch": ["<rootDir>/tests/**/*.js"]
+    "testMatch": ["<rootDir>/tes**/*.js"]
   },
   "author": "",
   "license": "ISC",

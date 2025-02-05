@@ -67,6 +67,7 @@ describe("Healthz API Endpoint Tests", () => {
         expect(res.headers["cache-control"]).toBe("no-cache, no-store, must-revalidate");
     });
 
+
     test("Should return 503 if database connection fails", async () => {
         jest.spyOn(db.sequelize, "authenticate").mockRejectedValue(new Error("DB Error"));
 
