@@ -44,6 +44,18 @@ npm index.js
     http://localhost:3001/healthz
 ```
 
+6. To run the application on a droplet - digitalocean
+```
+    create droplet
+    file transfer the scripts/main.sh and webapp.zip file to droplet /tmp directory
+    
+    cd /tmp
+    chmod +x main.sh
+    sed -i 's/\r$//' main.sh (if vm is not able to locate the script file)
+    ./main.sh
+    
+```
+
 ## API Specification
 
 ### Health Check Endpoint
