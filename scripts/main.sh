@@ -56,7 +56,7 @@ sudo mysql -u root -e "ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_nativ
 echo "Starting the Node.js application..."
 cd /opt/csye6225/webapp
 npm install
-sudo -u webapp node index.js  || error_exit "Failed to start the Node.js application."
+sudo -u webapp nohup node index.js  || error_exit "Failed to start the Node.js application."
 
 echo "Node.js application is running."
 
