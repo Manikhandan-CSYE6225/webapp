@@ -40,4 +40,10 @@ jobs:
         run: npm install
 
       - name: Tests
+        env:
+          DB_USERNAME_TEST: root
+          DB_PASSWORD_TEST: password
+          DB_NAME_TEST: csye6225_test
+          DB_HOST_TEST: 127.0.0.1
+          DB_DIALECT_TEST: mysql
         run: npm run test
