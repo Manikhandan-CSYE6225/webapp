@@ -14,7 +14,7 @@ jobs:
         node-version: [20.x]
 
     env:
-      DB_USERNAME: ${{ secrets.DB_USERNAME_TEST }}
+      DB_USER: ${{ secrets.DB_USERNAME_TEST }}
       DB_PASSWORD: ${{ secrets.DB_PASSWORD_TEST }}
       DB_DATABASE: ${{ vars.DB_NAME_TEST }}
 
