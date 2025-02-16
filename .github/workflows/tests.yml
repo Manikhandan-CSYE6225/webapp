@@ -13,8 +13,8 @@ jobs:
       mysql:
         image: mysql:latest
         env:
-          MYSQL_ROOT_PASSWORD: ${{ secrets.DB_PASSWORD_TEST }}
-          MYSQL_DATABASE: ${{ env.DB_NAME_TEST }}
+          MYSQL_ROOT_PASSWORD: password
+          MYSQL_DATABASE: csye6225_test
         ports:
           - 3306:3306
         options: >-
@@ -41,9 +41,9 @@ jobs:
 
       - name: Tests
         env:
-          DB_USERNAME_TEST: ${{ secrets.DB_USERNAME_TEST }}
-          DB_PASSWORD_TEST: ${{ secrets.DB_PASSWORD_TEST }}
-          DB_NAME_TEST: ${{ env.DB_NAME_TEST }}
-          DB_HOST_TEST: ${{ env.DB_HOST_TEST }}
-          DB_DIALECT_TEST: ${{ env.DB_DIALECT_TEST }}
+          DB_USERNAME_TEST: root
+          DB_PASSWORD_TEST: password
+          DB_NAME_TEST: csye6225_test
+          DB_HOST_TEST: 127.0.0.1
+          DB_DIALECT_TEST: mysql
         run: npm run test
