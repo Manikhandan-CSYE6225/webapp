@@ -4,10 +4,13 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "jest"
+    "test": "jest",
+    "zip": "zip -r webapp.zip . -x \\*node_modules\\* \\*.git\\* \\*.idea\\*"
   },
   "jest": {
-    "testMatch": ["<rootDir>/tests**/*.js"]
+    "testMatch": [
+      "<rootDir>/tests**/*.js"
+    ]
   },
   "author": "",
   "license": "ISC",
