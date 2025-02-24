@@ -70,5 +70,5 @@ jobs:
       - name: Build AMI with Packer
         run: |
           packer init ./packer
-          packer build -var "artifact_path=/home/runner/work/webapp-csye6225/webapp-csye6225/webapp-csye6225.zip" ./packer
+          packer build -var "artifact_path=/home/runner/work/webapp-csye6225/webapp-csye6225/webapp.zip" ./packer
 
