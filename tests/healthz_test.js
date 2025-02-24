@@ -13,7 +13,7 @@ afterAll(async () => {
 describe("Healthz API Endpoint Tests", () => {
     test("Should return 200 on successful GET request", async () => {
         const res = await request(app).get("/healthz");
-        expect(res.status).toBe(200);
+        expect(res.status).toBe(300);
         expect(res.text).toBe("");
         expect(res.headers["content-length"]).toBe("0");
         expect(res.headers["cache-control"]).toBe("no-cache, no-store, must-revalidate");
