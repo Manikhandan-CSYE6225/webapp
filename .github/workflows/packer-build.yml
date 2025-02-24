@@ -3,7 +3,7 @@ name: Build and Share AMI
 on:
   push:
     branches:
-      - main
+      - feature/packer-customimages
 
 jobs:
   integration-tests:
