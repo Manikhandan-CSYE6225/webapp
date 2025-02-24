@@ -42,6 +42,17 @@ variable "db_host" {
   default = "localhost"
 }
 
+variable "port" {
+  type    = string
+  default = "3001"
+}
+
+variable "dialect" {
+  type    = string
+  default = "mysql"
+}
+
+
 variable "ami_users" {
   type        = list(string)
   description = "List of AWS account IDs that can access the AMI"
@@ -120,6 +131,15 @@ build {
       "sudo mv /opt/csye6225/webapp/service/webapp.service /etc/systemd/system/webapp.service",
       "sudo systemctl daemon-reload",
       "sudo systemctl enable webapp.service"
+    ]
+
+    environment_vars = [
+      "DB_PASSWORD_DEV=${var.db_password}",
+      "DB_NAME_DEV=${var.db_name}",
+      "DB_USERNAME_DEV=${var.db_user}",
+      "DB_HOST_DEV=${var.db_host}",
+      "DB_DIALECT_DEV=${var.dialect}",
+      "PORT=${var.port}",
     ]
   }
 }
