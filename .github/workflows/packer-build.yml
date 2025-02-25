@@ -81,7 +81,7 @@ jobs:
       - name: Share Image with Another GCP Project
         run: |
           IMAGE_NAME=$(gcloud compute images list --filter="name~'packer-gcp-ubuntu-nodejs-*'" --format="value(name)" | head -n1)
-          gcloud projects add-iam-policy-binding \
+          gcloud projects add-iam-policy-binding development-account-45193 \
           --member="serviceAccount:github-cli-user@development-account-451923.iam.gserviceaccount.com" \
           --role="roles/compute.imageUser"
           gcloud compute images add-iam-policy-binding $IMAGE_NAME \
