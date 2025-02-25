@@ -87,5 +87,5 @@ jobs:
           gcloud compute images add-iam-policy-binding $IMAGE_NAME \
           --member="serviceAccount:demo-616@steam-circlet-452023-e2.iam.gserviceaccount.com" \
           --role="roles/compute.imageUser" \
-          --project=source-project-id
+          --project="steam-circlet-452023-e2"
 
