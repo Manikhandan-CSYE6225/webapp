@@ -67,8 +67,21 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-1
 
+      - name: Set up Google Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: ${{ secrets.GCP_PROJECT_ID }}
+          service_account_key: ${{ secrets.GCP_SA_KEY }}
+
       - name: Build AMI with Packer
         run: |
           packer init ./packer
           packer build -var "artifact_path=/home/runner/work/webapp-csye6225/webapp-csye6225/webapp.zip" ./packer
+
+      - name: Share Image with Another GCP Project
+        run: |
+          IMAGE_NAME=$(gcloud compute images list --filter="name~'packer-gcp-ubuntu-nodejs-*'" --format="value(name)" | head -n1)
+          gcloud compute images add-iam-policy-binding $IMAGE_NAME \
+            --member="project:${{ secrets.GCP_DEMO_PROJECT_ID }}" \
+            --role="roles/compute.imageUser"
 

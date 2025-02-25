@@ -4,6 +4,10 @@ packer {
       version = ">= 1.0.0, <2.0.0"
       source  = "github.com/hashicorp/amazon"
     }
+    googlecompute = {
+      version = ">= 1.0.0, <2.0.0"
+      source  = "github.com/hashicorp/googlecompute"
+    }
   }
 }
 
@@ -59,6 +63,21 @@ variable "ami_users" {
   default     = ["430118854533"]
 }
 
+variable "gcp_project_id" {
+  type    = string
+  default = "your-gcp-project-id"
+}
+
+variable "gcp_zone" {
+  type    = string
+  default = "us-central1-a"
+}
+
+variable "gcp_image_name" {
+  type    = string
+  default = "packer-gcp-ubuntu-nodejs"
+}
+
 locals {
   timestamp = regex_replace(timestamp(), "[- TZ:]", "")
 }
@@ -66,7 +85,6 @@ locals {
 source "amazon-ebs" "ubuntu_nodejs" {
   ami_name      = "${var.ami_prefix}-${local.timestamp}"
   instance_type = "t2.micro"
-  profile       = "dev"
   region        = var.aws_region
   source_ami    = "ami-04b4f1a9cf54c11d0"
   ssh_username = "ubuntu"
@@ -79,10 +97,23 @@ source "amazon-ebs" "ubuntu_nodejs" {
   }
 }
 
+source "googlecompute" "ubuntu_nodejs" {
+  project_id          = var.gcp_project_id
+  gcp_source_image            = "ubuntu-2404-noble-amd64-v20250214"
+  gcp_source_image_family     = "ubuntu-2404-lts-noble"
+  zone                = var.gcp_zone
+  image_name          = "${var.gcp_image_name}-${local.timestamp}"
+  ssh_username        = "ubuntu"
+  machine_type        = "e2-micro"
+  disk_size           = 10
+  disk_type           = "pd-standard"
+}
+
 build {
   name    = "packer-ubuntu"
   sources = [
-    "source.amazon-ebs.ubuntu_nodejs"
+    "source.amazon-ebs.ubuntu_nodejs",
+    "source.googlecompute.ubuntu_nodejs"
   ]
 
   provisioner "file" {
@@ -139,13 +170,5 @@ build {
       "sudo systemctl enable webapp.service"
     ]
 
-    environment_vars = [
-      "DB_PASSWORD_DEV=${var.db_password}",
-      "DB_NAME_DEV=${var.db_name}",
-      "DB_USERNAME_DEV=${var.db_user}",
-      "DB_HOST_DEV=${var.db_host}",
-      "DB_DIALECT_DEV=${var.dialect}",
-      "PORT=${var.port}",
-    ]
   }
 }
