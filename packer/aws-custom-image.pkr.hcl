@@ -65,7 +65,7 @@ variable "ami_users" {
 
 variable "gcp_project_id" {
   type    = string
-  default = "your-gcp-project-id"
+  default = "748591307055"
 }
 
 variable "gcp_zone" {
@@ -99,8 +99,8 @@ source "amazon-ebs" "ubuntu_nodejs" {
 
 source "googlecompute" "ubuntu_nodejs" {
   project_id          = var.gcp_project_id
-  gcp_source_image            = "ubuntu-2404-noble-amd64-v20250214"
-  gcp_source_image_family     = "ubuntu-2404-lts-noble"
+  source_image            = "ubuntu-2404-noble-amd64-v20250214"
+  source_image_family     = "ubuntu-2404-lts-noble"
   zone                = var.gcp_zone
   image_name          = "${var.gcp_image_name}-${local.timestamp}"
   ssh_username        = "ubuntu"
