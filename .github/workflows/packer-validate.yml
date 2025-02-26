@@ -1,9 +1,10 @@
 name: Packer Template Check
 
 on:
-  push:
+  pull_request:
     branches:
-      - feature/packer-customimages
+      - main
+    types: [opened, synchronize, reopened]
 
 jobs:
   packer-check:
@@ -29,5 +30,5 @@ jobs:
       - name: Run Packer validate
         id: packer-validate
         run: |
-          packer validate -var "aws_region=${{ secrets.AWS_REGION }}" -var "ami_source=ami-04b4f1a9cf54c11d0" -var "ami_instance=t2.micro" -var "ami_prefix=webapp-aws-ubuntu-nodejs" -var "db_user=${{ secrets.DB_USERNAME_TEST }}" -var "db_password=${{ secrets.DB_PASSWORD_TEST }}" -var "db_name=${{ secrets.DB_NAME_TEST }}" -var "db_host=${{ secrets.DB_HOST_TEST }}" -var "port=${{ secrets.PORT }}" -var "dialect=${{ secrets.DB_DIALECT_TEST }}" -var "ami_users=${{ secrets.AMI_USERS }}" -var "gcp_project_id=${{ secrets.GCP_DEV_PROJECTID }}" -var "gcp_zone=${{ secrets.GCP_ZONE }}" -var "gcp_image_name=webapp-gcp-ubuntu-nodejs" -var "artifact_path=/home/runner/work/webapp-csye6225/webapp-csye6225/webapp.zip" ./packer
+          packer validate -var "aws_region=${{ secrets.AWS_REGION }}" -var "ami_source=ami-04b4f1a9cf54c11d0" -var "ami_instance=t2.micro" -var "ami_prefix=webapp-aws-ubuntu-nodejs" -var "db_user=${{ secrets.DB_USERNAME_TEST }}" -var "db_password=${{ secrets.DB_PASSWORD_TEST }}" -var "db_name=${{ secrets.DB_NAME_TEST }}" -var "db_host=${{ secrets.DB_HOST_TEST }}" -var "port=${{ secrets.PORT }}" -var "dialect=${{ secrets.DB_DIALECT_TEST }}" -var "ami_users=${{ secrets.AMI_USERS }}" -var "gcp_project_id=${{ secrets.GCP_DEV_PROJECTID }}" -var "gcp_zone=${{ secrets.GCP_ZONE }}" -var "gcp_image_name=webapp-gcp-ubuntu-nodejs" -var "artifact_path=/home/runner/work/webapp/webapp/webapp.zip" ./packer
 
