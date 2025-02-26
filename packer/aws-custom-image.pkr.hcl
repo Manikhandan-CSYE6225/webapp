@@ -37,11 +37,11 @@ variable "artifact_path" {
 }
 
 variable "db_user" {
-  type    = string
+  type = string
 }
 
 variable "db_password" {
-  type    = string
+  type = string
 }
 
 variable "db_name" {
@@ -72,7 +72,7 @@ variable "ami_users" {
 }
 
 variable "gcp_project_id" {
-  type    = string
+  type = string
 }
 
 variable "gcp_zone" {
@@ -104,8 +104,8 @@ source "amazon-ebs" "ubuntu_nodejs" {
   instance_type = var.ami_instance
   region        = var.aws_region
   source_ami    = var.ami_source
-  ssh_username = "ubuntu"
-  ami_users                = var.ami_users
+  ssh_username  = "ubuntu"
+  ami_users     = var.ami_users
   launch_block_device_mappings {
     device_name           = "/dev/sda1"
     volume_size           = 8
@@ -116,8 +116,8 @@ source "amazon-ebs" "ubuntu_nodejs" {
 
 source "googlecompute" "ubuntu_nodejs" {
   project_id          = "748591307055"
-  source_image            = "ubuntu-2404-noble-amd64-v20250214"
-  source_image_family     = "ubuntu-2404-lts-noble"
+  source_image        = "ubuntu-2404-noble-amd64-v20250214"
+  source_image_family = "ubuntu-2404-lts-noble"
   zone                = var.gcp_zone
   image_name          = "${var.gcp_image_name}-${local.timestamp}"
   ssh_username        = "ubuntu"
@@ -127,7 +127,7 @@ source "googlecompute" "ubuntu_nodejs" {
 }
 
 build {
-  name    = "packer-ubuntu"
+  name = "packer-ubuntu"
   sources = [
     "source.amazon-ebs.ubuntu_nodejs",
     "source.googlecompute.ubuntu_nodejs"
