@@ -18,7 +18,17 @@ variable "aws_region" {
 
 variable "ami_prefix" {
   type    = string
-  default = "packer-aws-ubuntu-nodejs"
+  default = "webapp-aws-ubuntu-nodejs"
+}
+
+variable "ami_source" {
+  type    = string
+  default = "ami-04b4f1a9cf54c11d0"
+}
+
+variable "ami_instance" {
+  type    = string
+  default = "t2.micro"
 }
 
 variable "artifact_path" {
@@ -28,12 +38,10 @@ variable "artifact_path" {
 
 variable "db_user" {
   type    = string
-  default = "root"
 }
 
 variable "db_password" {
   type    = string
-  default = "password"
 }
 
 variable "db_name" {
@@ -48,7 +56,7 @@ variable "db_host" {
 
 variable "port" {
   type    = string
-  default = "3001"
+  default = "8080"
 }
 
 variable "dialect" {
@@ -60,12 +68,11 @@ variable "dialect" {
 variable "ami_users" {
   type        = list(string)
   description = "List of AWS account IDs that can access the AMI"
-  default     = ["430118854533"]
+  default     = []
 }
 
 variable "gcp_project_id" {
   type    = string
-  default = "748591307055"
 }
 
 variable "gcp_zone" {
@@ -75,7 +82,17 @@ variable "gcp_zone" {
 
 variable "gcp_image_name" {
   type    = string
-  default = "packer-gcp-ubuntu-nodejs"
+  default = "webapp-gcp-ubuntu-nodejs"
+}
+
+variable "gcp_source_image" {
+  type    = string
+  default = "ubuntu-2404-noble-amd64-v20250214"
+}
+
+variable "gcp_source_family" {
+  type    = string
+  default = "ubuntu-2404-lts-noble"
 }
 
 locals {
@@ -84,9 +101,9 @@ locals {
 
 source "amazon-ebs" "ubuntu_nodejs" {
   ami_name      = "${var.ami_prefix}-${local.timestamp}"
-  instance_type = "t2.micro"
+  instance_type = var.ami_instance
   region        = var.aws_region
-  source_ami    = "ami-04b4f1a9cf54c11d0"
+  source_ami    = var.ami_source
   ssh_username = "ubuntu"
   ami_users                = var.ami_users
   launch_block_device_mappings {
@@ -99,8 +116,8 @@ source "amazon-ebs" "ubuntu_nodejs" {
 
 source "googlecompute" "ubuntu_nodejs" {
   project_id          = var.gcp_project_id
-  source_image            = "ubuntu-2404-noble-amd64-v20250214"
-  source_image_family     = "ubuntu-2404-lts-noble"
+  source_image            = var.gcp_source_image
+  source_image_family     = var.gcp_source_family
   zone                = var.gcp_zone
   image_name          = "${var.gcp_image_name}-${local.timestamp}"
   ssh_username        = "ubuntu"
