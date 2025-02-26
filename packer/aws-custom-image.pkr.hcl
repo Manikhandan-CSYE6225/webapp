@@ -118,7 +118,7 @@ source "googlecompute" "ubuntu_nodejs" {
   project_id          = "748591307055"
   source_image            = "ubuntu-2404-noble-amd64-v20250214"
   source_image_family     = "ubuntu-2404-lts-noble"
-  zone                = "us-central1-a"
+  zone                = var.gcp_zone
   image_name          = "${var.gcp_image_name}-${local.timestamp}"
   ssh_username        = "ubuntu"
   machine_type        = "e2-micro"
