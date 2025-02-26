@@ -115,10 +115,10 @@ source "amazon-ebs" "ubuntu_nodejs" {
 }
 
 source "googlecompute" "ubuntu_nodejs" {
-  project_id          = var.gcp_project_id
-  source_image            = var.gcp_source_image
-  source_image_family     = var.gcp_source_family
-  zone                = var.gcp_zone
+  project_id          = "748591307055"
+  source_image            = "ubuntu-2404-noble-amd64-v20250214"
+  source_image_family     = "ubuntu-2404-lts-noble"
+  zone                = "us-central1-a"
   image_name          = "${var.gcp_image_name}-${local.timestamp}"
   ssh_username        = "ubuntu"
   machine_type        = "e2-micro"
