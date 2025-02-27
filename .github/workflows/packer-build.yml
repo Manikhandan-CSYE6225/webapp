@@ -95,7 +95,7 @@ jobs:
 
       - name: Create Image from target GCP Project
         run: |
-           gcloud compute images create webapp-gcp image \
+           gcloud compute images create webapp-gcp-custom-image \
            --source-image=$IMAGE_NAME \
            --source-image-project=${{ secrets.GCP_PROJECT_ID }} \
            --project=${{ secrets.GCP_DEMO_PROJECT_ID }}
