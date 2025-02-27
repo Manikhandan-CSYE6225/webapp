@@ -86,10 +86,7 @@ jobs:
           gcloud compute images add-iam-policy-binding $IMAGE_NAME \
           --member="serviceAccount:${{ secrets.GCP_DEMO_SERVICE_ACC }}@${{ secrets.GCP_DEMO_PROJECT_ID }}.iam.gserviceaccount.com" \
           --role="roles/compute.imageUser"
-
-      - name: Logout from Source Service Account
-        run: gcloud auth revoke --all
-
+          
       - name: Set up Google Cloud SDK
         uses: google-github-actions/auth@v2
         with:
