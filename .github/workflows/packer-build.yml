@@ -86,8 +86,12 @@ jobs:
           --member="serviceAccount:${{ secrets.GCP_DEMO_SERVICE_ACC }}@${{ secrets.GCP_DEMO_PROJECT_ID }}.iam.gserviceaccount.com" \
           --role=roles/compute.imageUser
           IMAGE_NAME=$(gcloud compute images list --filter="name~'webapp-gcp-ubuntu-nodejs-*'" --format="value(name)" | head -n1)
-          gcloud compute images add-iam-policy-binding $IMAGE_NAME \
-          --member="serviceAccount:${{ secrets.GCP_DEMO_SERVICE_ACC }}@${{ secrets.GCP_DEMO_PROJECT_ID }}.iam.gserviceaccount.com" \
-          --role="roles/compute.imageUser" \
-          --project=${{ secrets.GCP_PROJECT_ID }}
+#          gcloud compute images add-iam-policy-binding $IMAGE_NAME \
+#          --member="serviceAccount:${{ secrets.GCP_DEMO_SERVICE_ACC }}@${{ secrets.GCP_DEMO_PROJECT_ID }}.iam.gserviceaccount.com" \
+#          --role="roles/compute.imageUser" \
+#          --project=${{ secrets.GCP_PROJECT_ID }}
+           gcloud compute images create $IMAGE_NAME \
+           --source-image=$IMAGE_NAME \
+           --source-image-project=${{ secrets.GCP_PROJECT_ID }} \
+           --project=${{ secrets.GCP_DEMO_PROJECT_ID }}
 
