@@ -82,7 +82,7 @@ variable "gcp_zone" {
 
 variable "gcp_image_name" {
   type    = string
-  default = "webapp-gcp-ubuntu-nodejs"
+  default = "webapp-ubuntu-nodejs"
 }
 
 variable "gcp_source_image" {
@@ -115,9 +115,9 @@ source "amazon-ebs" "ubuntu_nodejs" {
 }
 
 source "googlecompute" "ubuntu_nodejs" {
-  project_id          = "748591307055"
-  source_image        = "ubuntu-2404-noble-amd64-v20250214"
-  source_image_family = "ubuntu-2404-lts-noble"
+  project_id          = var.gcp_project_id
+  source_image        = var.gcp_source_image
+  source_image_family = var.gcp_source_family
   zone                = var.gcp_zone
   image_name          = "${var.gcp_image_name}-${local.timestamp}"
   ssh_username        = "ubuntu"
