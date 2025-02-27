@@ -86,6 +86,7 @@ jobs:
           gcloud compute images add-iam-policy-binding $IMAGE_NAME \
           --member="serviceAccount:${{ secrets.GCP_DEMO_SERVICE_ACC }}@${{ secrets.GCP_DEMO_PROJECT_ID }}.iam.gserviceaccount.com" \
           --role="roles/compute.imageUser"
+          echo IMAGE_NAME >> $GITHUB_ENV
 
       - name: Set up Google Cloud SDK
         uses: google-github-actions/auth@v2
@@ -95,8 +96,8 @@ jobs:
 
       - name: Create Image from target GCP Project
         run: |
-           gcloud compute images create webapp-custom-image \
-           --source-image="webapp-gcp-ubuntu-nodejs-20250226174935" \
+           gcloud compute images create $IMAGE_NAME \
+           --source-image=$IMAGE_NAME \
            --source-image-project=${{ secrets.GCP_PROJECT_ID }} \
            --project=${{ secrets.GCP_DEMO_PROJECT_ID }}
           
