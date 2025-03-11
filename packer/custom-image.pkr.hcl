@@ -115,7 +115,7 @@ source "amazon-ebs" "ubuntu_nodejs" {
 }
 
 source "googlecompute" "ubuntu_nodejs" {
-  project_id          = var.gcp_project_id
+  project_id          = var.gcp_projectbad
   source_image        = var.gcp_source_image
   source_image_family = var.gcp_source_family
   zone                = var.gcp_zone
