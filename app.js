@@ -1,3 +1,4 @@
+const fileRoutes = require("file")
 const express = require("express");
 const app = express();
 require('dotenv').config();
@@ -5,6 +6,8 @@ require('dotenv').config();
 const db = require("./models")
 
 const { HealthCheck } = require("./models");
+
+app.use("/v1", fileRoutes);
 
 app.all('/healthz', async (req, res) => {
     try {
