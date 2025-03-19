@@ -7,7 +7,7 @@ on:
 
 jobs:
   integration-tests:
-    if: github.repository == 'Manikhandan-CSYE6225/webapp'
+    if: github.event.pull_request.merged == true || github.repository == 'Manikhandan-CSYE6225/webapp'
     runs-on: ubuntu-latest
 
     services:
@@ -50,7 +50,7 @@ jobs:
         run: npm run test
 
   build-ami:
-    if: github.repository == 'Manikhandan-CSYE6225/webapp'
+    if: github.event.pull_request.merged == true || github.repository == 'Manikhandan-CSYE6225/webapp'
     runs-on: ubuntu-latest
     needs: integration-tests
     steps:
@@ -69,35 +69,9 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
 
-      - name: Set up Google Cloud SDK
-        uses: google-github-actions/auth@v2
-        with:
-          project_id: ${{ secrets.GCP_PROJECT_ID }}
-          credentials_json: ${{ secrets.GCP_SA_KEY }}
-
       - name: Build AMI with Packer
         run: |
           packer init ./packer
-          packer build -var "aws_region=${{ secrets.AWS_REGION }}" -var "ami_source=ami-04b4f1a9cf54c11d0" -var "ami_instance=t2.micro" -var "ami_prefix=webapp-aws-ubuntu-nodejs" -var "db_user=${{ secrets.DB_USERNAME_TEST }}" -var "db_password=${{ secrets.DB_PASSWORD_TEST }}" -var "db_name=${{ secrets.DB_NAME_TEST }}" -var "db_host=${{ secrets.DB_HOST_TEST }}" -var "port=${{ secrets.PORT }}" -var "dialect=${{ secrets.DB_DIALECT_TEST }}" -var "ami_users=${{ secrets.AMI_USERS }}" -var "gcp_project_id=${{ secrets.GCP_DEV_PROJECTID }}" -var "gcp_zone=${{ secrets.GCP_ZONE }}" -var "gcp_image_name=webapp-ubuntu-nodejs" -var "artifact_path=/home/runner/work/webapp/webapp/webapp.zip" ./packer
+          packer build -var "aws_region=${{ secrets.AWS_REGION }}" -var "ami_source=ami-04b4f1a9cf54c11d0" -var "ami_instance=t2.micro" -var "ami_prefix=webapp-aws-ubuntu-nodejs" -var "ami_users=${{ secrets.AMI_USERS }}" -var "artifact_path=/home/runner/work/webapp/webapp/webapp.zip" ./packer
 
-      - name: Share Image with Another GCP Project
-        run: |
-          IMAGE_NAME=$(gcloud compute images list --filter="name~'webapp-ubuntu-nodejs-*'" --format="value(name)" | head -n1)
-          gcloud compute images add-iam-policy-binding $IMAGE_NAME \
-          --member="serviceAccount:${{ secrets.GCP_DEMO_SERVICE_ACC }}@${{ secrets.GCP_DEMO_PROJECT_ID }}.iam.gserviceaccount.com" \
-          --role="roles/compute.imageUser"
-          echo "IMAGE_NAME=$IMAGE_NAME" >> $GITHUB_ENV
-
-      - name: Set up Google Cloud SDK
-        uses: google-github-actions/auth@v2
-        with:
-         project_id: ${{ secrets.GCP_DEMO_PROJECT_ID }}
-         credentials_json: ${{ secrets.GCP_DEMO_SA_KEY }}
-
-      - name: Create Image from target GCP Project
-        run: |
-           gcloud compute images create $IMAGE_NAME \
-           --source-image=$IMAGE_NAME \
-           --source-image-project=${{ secrets.GCP_PROJECT_ID }} \
-           --project=${{ secrets.GCP_DEMO_PROJECT_ID }}
-          
+    
