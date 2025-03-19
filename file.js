@@ -73,15 +73,16 @@ router.all("/file", upload.single("file"), async (req, res) => {
 
 router.all("/file/:id", async (req, res) => {
     try {
+        const { id } = req.params;
         const file = await Metadata.findByPk(req.params.id);
-        if (req.method !== 'GET' || req.method !== 'DELETE') {
+        if (req.method !== 'GET' && req.method !== 'DELETE') {
             res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
             res.set('Pragma', 'no-cache');
             res.set('X-Content-Type-Options', 'nosniff');
             res.status(405).end();
         }
 
-        else if (Object.keys(req.query).length > 0 || Object.keys(req.params).length > 0) {
+        else if (Object.keys(req.query).length > 0) {
             res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
             res.set('Pragma', 'no-cache');
             res.set('X-Content-Type-Options', 'nosniff');
@@ -111,6 +112,8 @@ router.all("/file/:id", async (req, res) => {
 
             await s3.deleteObject(params).promise();
             await file.destroy();
+
+            await Metadata.destroy({ where: { id } });
 
             res.status(200).json(file);
         }
