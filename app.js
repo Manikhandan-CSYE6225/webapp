@@ -1,9 +1,9 @@
-const fileRoutes = require("./file.js")
 const express = require("express");
 const app = express();
 require('dotenv').config();
 
 const db = require("./models")
+const fileRoutes = require("./file.js")
 
 const { HealthCheck } = require("./models");
 
