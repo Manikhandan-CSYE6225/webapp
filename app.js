@@ -1,4 +1,4 @@
-const fileRoutes = require("file")
+const fileRoutes = require("./file.js")
 const express = require("express");
 const app = express();
 require('dotenv').config();
