@@ -44,7 +44,7 @@ router.all("/file", upload.single("file"), async (req, res) => {
 
             const params = {
                 Bucket: process.env.S3_BUCKET,
-                Key: `uploads/${fileId}-${fileName}`,
+                Key: `${fileId}/${fileId}-${fileName}`,
                 Body: req.file.buffer,
                 ContentType: req.file.mimetype,
             };
@@ -53,7 +53,7 @@ router.all("/file", upload.single("file"), async (req, res) => {
 
             const headParams = {
                 Bucket: process.env.S3_BUCKET,
-                Key: `uploads/${fileId}-${fileName}`
+                Key: `${fileId}/${fileId}-${fileName}`
             };
 
             const s3Metadata = await s3.headObject(headParams).promise();
@@ -67,10 +67,6 @@ router.all("/file", upload.single("file"), async (req, res) => {
                 content_length: s3Metadata.ContentLength,
                 etag: s3Metadata.ETag,
                 last_modified: s3Metadata.LastModified,
-                content_disposition: s3Metadata.ContentDisposition,
-                content_encoding: s3Metadata.ContentEncoding,
-                cache_control: s3Metadata.CacheControl,
-                expires: s3Metadata.Expires,
                 server_side_encryption: s3Metadata.ServerSideEncryption,
                 replication_status: s3Metadata.ReplicationStatus,
                 storage_class: s3Metadata.StorageClass
@@ -80,7 +76,7 @@ router.all("/file", upload.single("file"), async (req, res) => {
                 id: fileId,
                 file_name: fileName,
                 url: filePath,
-                upload_date: uploadDate,
+                upload_date: uploadDate.toISOString().split('T')[0],
             };
 
             res.status(201).json(fileMetadata);
@@ -108,7 +104,7 @@ router.all("/file/:id", async (req, res) => {
             attributes: ["id", "file_name", "url", "upload_date"]
         });
         if (req.method !== 'GET' && req.method !== 'DELETE') {
-            res.res.status(400).json({ error: "Bad Request" });
+            res.status(400).json({ error: "Bad Request" });
         }
 
         else if (Object.keys(req.query).length > 0) {
