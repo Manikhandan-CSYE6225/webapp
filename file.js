@@ -20,20 +20,39 @@ const upload = multer({ storage: multer.memoryStorage() });
 router.all("/file", upload.single("file"), async (req, res) => {
     try {
         await db.sequelize.authenticate();
-        if (req.method !== 'POST') {
-            res.status(400).json({ error: "Bad Request" });
+        if (req.method === 'GET' || req.method === 'DELETE') {
+            res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+            res.set('Pragma', 'no-cache');
+            res.set('X-Content-Type-Options', 'nosniff');
+            res.status(400).end();
+        }
+
+        else if (req.method !== 'POST') {
+            res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+            res.set('Pragma', 'no-cache');
+            res.set('X-Content-Type-Options', 'nosniff');
+            res.status(405).end();
         }
 
         else if (Object.keys(req.query).length > 0 || Object.keys(req.params).length > 0) {
-            res.status(400).json({ error: "Bad Request" });
+            res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+            res.set('Pragma', 'no-cache');
+            res.set('X-Content-Type-Options', 'nosniff');
+            res.status(400).end();
         }
 
         else if (!req.is("multipart/form-data")) {
-            return res.status(400).json({ error: "Invalid content type. Only multipart/form-data is allowed." });
+            res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+            res.set('Pragma', 'no-cache');
+            res.set('X-Content-Type-Options', 'nosniff');
+            return res.status(400).end();
         }
 
         else if (!req.file) {
-            return res.status(400).json({ error: "No file uploaded." });
+            res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+            res.set('Pragma', 'no-cache');
+            res.set('X-Content-Type-Options', 'nosniff');
+            res.status(400).end();
         }
 
         else {
@@ -88,10 +107,16 @@ router.all("/file", upload.single("file"), async (req, res) => {
             error.code === "AccessDenied" ||
             error.code === "InvalidAccessKeyId" ||
             error.code === "SignatureDoesNotMatch") {
-            return res.status(401).json({ error: "Unauthorized." });
+            res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+            res.set('Pragma', 'no-cache');
+            res.set('X-Content-Type-Options', 'nosniff');
+            res.status(401).end();
         }
         else {
-            res.status(503).json({ error: "Service Unavailable." });
+            res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+            res.set('Pragma', 'no-cache');
+            res.set('X-Content-Type-Options', 'nosniff');
+            res.status(503).end();
         }
     }
 });
@@ -104,19 +129,31 @@ router.all("/file/:id", async (req, res) => {
             attributes: ["id", "file_name", "url", "upload_date"]
         });
         if (req.method !== 'GET' && req.method !== 'DELETE') {
-            res.status(400).json({ error: "Bad Request" });
+            res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+            res.set('Pragma', 'no-cache');
+            res.set('X-Content-Type-Options', 'nosniff');
+            res.status(405).end();
         }
 
         else if (Object.keys(req.query).length > 0) {
-            res.status(400).json({ error: "Bad Request" });
+            res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+            res.set('Pragma', 'no-cache');
+            res.set('X-Content-Type-Options', 'nosniff');
+            res.status(400).end();
         }
 
         else if (req.headers['content-length'] && parseInt(req.headers['content-length']) > 0) {
-            res.status(400).json({ error: "Bad Request" });
+            res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+            res.set('Pragma', 'no-cache');
+            res.set('X-Content-Type-Options', 'nosniff');
+            res.status(400).end();
         }
 
         else if (!file) {
-            return res.status(404).json({ error: "File not found" });
+            res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+            res.set('Pragma', 'no-cache');
+            res.set('X-Content-Type-Options', 'nosniff');
+            res.status(404).end();
         }
 
         else if (req.method === 'GET') {
@@ -134,7 +171,11 @@ router.all("/file/:id", async (req, res) => {
 
             await Metadata.destroy({ where: { id } });
 
-            res.status(200).json(file);
+            res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+            res.set('Pragma', 'no-cache');
+            res.set('X-Content-Type-Options', 'nosniff');
+            res.status(204);
+            res.end();
         }
     } catch (error) {
         console.error("Get file error:", error);
@@ -142,10 +183,16 @@ router.all("/file/:id", async (req, res) => {
             error.code === "AccessDenied" ||
             error.code === "InvalidAccessKeyId" ||
             error.code === "SignatureDoesNotMatch") {
-            return res.status(401).json({ error: "Unauthorized." });
+            res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+            res.set('Pragma', 'no-cache');
+            res.set('X-Content-Type-Options', 'nosniff');
+            res.status(401).end();
         }
         else {
-            res.status(503).json({ error: "Service Unavailable." });
+            res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+            res.set('Pragma', 'no-cache');
+            res.set('X-Content-Type-Options', 'nosniff');
+            res.status(503).end();
         }
     }
 });
