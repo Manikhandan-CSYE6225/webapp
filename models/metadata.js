@@ -15,7 +15,7 @@ module.exports = (sequelize, DataTypes) => {
             allowNull: false,
         },
         upload_date: {
-            type: DataTypes.DATE,
+            type: DataTypes.DATEONLY,
             allowNull: false,
             defaultValue: DataTypes.NOW,
         },
@@ -32,22 +32,6 @@ module.exports = (sequelize, DataTypes) => {
             allowNull: true,
         },
         last_modified: {
-            type: DataTypes.DATE,
-            allowNull: true,
-        },
-        content_disposition: {
-            type: DataTypes.STRING,
-            allowNull: true,
-        },
-        content_encoding: {
-            type: DataTypes.STRING,
-            allowNull: true,
-        },
-        cache_control: {
-            type: DataTypes.STRING,
-            allowNull: true,
-        },
-        expires: {
             type: DataTypes.DATE,
             allowNull: true,
         },
@@ -68,7 +52,8 @@ module.exports = (sequelize, DataTypes) => {
         timestamps: false,
         hooks: {
             beforeCreate: (metadata) => {
-                metadata.upload_date = new Date();
+                const today = new Date();
+                metadata.upload_date = new Date(today.getFullYear(), today.getMonth(), today.getDate());
             },
         },
     });
