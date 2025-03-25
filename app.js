@@ -8,6 +8,7 @@ const fileRoutes = require("./file.js");
 const { logger, requestLogger, errorLogger, stream } = require("./logger");
 
 const { HealthCheck } = require("./models");
+const metrics = require('./metrics');
 
 // Logging middleware
 app.use(morgan('combined', { stream }));
@@ -16,6 +17,7 @@ app.use(requestLogger);
 app.use("/v1", fileRoutes);
 
 app.all('/healthz', async (req, res) => {
+    const start = Date.now();
     logger.debug('Health check request received', {
         method: req.method,
         query: req.query,
@@ -53,7 +55,11 @@ app.all('/healthz', async (req, res) => {
             res.status(400).end();
         } else {
             try {
+                metrics.incrementApiCall("getHealthz");
+                const dbStart = Date.now();
                 await HealthCheck.create({});
+                metrics.timingDbQuery("getHealthz", Date.now() - dbStart);
+                metrics.timingApiCall("getHealthz", Date.now() - start);
                 logger.info('Health check successful - database connection verified');
                 res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
                 res.set('Pragma', 'no-cache');
