@@ -75,6 +75,7 @@ build {
       "sudo apt install -y nodejs",
       "sudo apt install -y npm",
       "sudo apt install -y unzip",
+      "sudo apt install -y amazon-cloudwatch-agent",
       "sudo groupadd csye6225",
       "sudo useradd -r -s /usr/sbin/nologin -g csye6225 csye6225 || true",
       "sudo mkdir -p /opt/csye6225/webapp",

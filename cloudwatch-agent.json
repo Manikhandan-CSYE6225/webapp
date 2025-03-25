@@ -1,0 +1,27 @@
+{
+  "logs": {
+    "logs_collected": {
+      "files": {
+        "collect_list": [
+          {
+            "file_path": "/opt/csye6225/webapp/application.log",
+            "log_group_name": "WebAppLogs",
+            "log_stream_name": "WebAppLogStream",
+            "timestamp_format": "%Y-%m-%d %H:%M:%S",
+            "multi_line_start_pattern": "^{\\\"timestamp\\\":"
+          }
+        ]
+      }
+    },
+    "log_stream_name": "WebAppLogs",
+    "log_group_name": "WebAppLogStream"
+  },
+  "metrics": {
+    "metrics_collected": {
+      "statsd": {
+        "service_address": ":8125"
+      }
+    },
+    "namespace": "WebAppMetrics"
+  }
+}
