@@ -12,14 +12,13 @@
           }
         ]
       }
-    },
-    "log_stream_name": "WebAppLogs",
-    "log_group_name": "WebAppLogStream"
+    }
   },
   "metrics": {
     "metrics_collected": {
       "statsd": {
-        "service_address": ":8125"
+        "service_address": ":8125",
+        "metrics_collection_interval": 30
       }
     },
     "namespace": "WebAppMetrics"

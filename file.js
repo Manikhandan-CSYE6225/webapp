@@ -167,16 +167,11 @@ router.all("/file", upload.single("file"), async (req, res) => {
         }
 
     } catch (error) {
-        logger.error("Upload error:", {
-            error: error.message,
-            stack: error.stack,
-            code: error.code
-        });
-
         if (error.code === "CredentialsError" ||
             error.code === "AccessDenied" ||
             error.code === "InvalidAccessKeyId" ||
             error.code === "SignatureDoesNotMatch") {
+            metrics.timingApiCall("uploadFile", Date.now() - start);
             logger.error('AWS authentication error', {
                 errorCode: error.code,
                 message: error.message
@@ -184,6 +179,7 @@ router.all("/file", upload.single("file"), async (req, res) => {
             res.status(401).end();
         }
         else {
+            metrics.timingApiCall("uploadFile", Date.now() - start);
             logger.error('Unexpected service error', {
                 error: error.message,
                 stack: error.stack
@@ -203,30 +199,6 @@ router.all("/file/:id", async (req, res) => {
     });
 
     try {
-        await db.sequelize.authenticate();
-        let file;
-        let fetchTime;
-        try {
-            const dbStart = Date.now();
-            file = await Metadata.findByPk(req.params.id, {
-                attributes: ["id", "file_name", "url", "upload_date"]
-            });
-            fetchTime = Date.now() - dbStart;
-            logDatabaseOperation('findByPk', 'Metadata', id, !!file);
-            logger.debug('Database query result', {
-                id,
-                found: !!file
-            });
-        } catch (dbError) {
-            logDatabaseOperation('findByPk', 'Metadata', id, false);
-            logger.error('Database query failed', {
-                error: dbError.message,
-                stack: dbError.stack,
-                id
-            });
-            throw dbError;
-        }
-
         if (req.method !== 'GET' && req.method !== 'DELETE') {
             logger.warn('Method not allowed for file by ID endpoint', {
                 method: req.method,
@@ -251,50 +223,54 @@ router.all("/file/:id", async (req, res) => {
             res.status(400).end();
         }
 
-        else if (!file) {
-            logger.warn('File not found', { id });
-            res.status(404).end();
-        }
-
         else if (req.method === 'GET') {
             metrics.incrementApiCall("getFile");
-            metrics.timingDbQuery("fetchMetadata", Date.now() - fetchTime);
-            metrics.timingApiCall("getFile", Date.now() - start);
-            logger.info('File retrieved successfully', { id, fileName: file.file_name });
-            res.status(200).json(file);
+            let file;
+            try {
+                const dbStart = Date.now();
+                file = await Metadata.findByPk(req.params.id, {
+                    attributes: ["id", "file_name", "url", "upload_date"]
+                });
+                metrics.timingDbQuery("fetchMetadata", Date.now() - dbStart);
+                logDatabaseOperation('findByPk', 'Metadata', id, !!file);
+                logger.debug('Database query result', {
+                    id,
+                    found: !!file
+                });
+            } catch (dbError) {
+                logDatabaseOperation('findByPk', 'Metadata', id, false);
+                logger.error('Database query failed', {
+                    error: dbError.message,
+                    stack: dbError.stack,
+                    id
+                });
+                throw dbError;
+            }
+
+            if (!file) {
+                metrics.timingApiCall("getFile", Date.now() - start);
+                logger.warn('File not found', { id });
+                res.status(404).end();
+            } else {
+                metrics.timingApiCall("getFile", Date.now() - start);
+                logger.info('File retrieved successfully', { id, fileName: file.file_name });
+                res.status(200).json(file);
+            }
         }
 
         else {
-            metrics.incrementApiCall("getFile");
-            logger.info('Processing file deletion request', { id, fileName: file.file_name });
-            const params = {
-                Bucket: process.env.S3_BUCKET,
-                Key: file.url.replace(`${process.env.S3_BUCKET}/`, ""),
-            };
+            metrics.incrementApiCall("deleteFile");
+            logger.info('Processing file deletion request', { id });
 
-            try {
-                const s3Delete = Date.now();
-                await s3.deleteObject(params).promise();
-                metrics.timingS3Call("delete", Date.now() - s3Delete);
-
-                logS3Operation('deleteObject', params, true);
-                logger.info('File deleted from S3', { id, fileName: file.file_name });
-            } catch (s3Error) {
-                logS3Operation('deleteObject', params, false);
-                logger.error('Failed to delete file from S3', {
-                    error: s3Error.message,
-                    stack: s3Error.stack,
-                    id
-                });
-                throw s3Error;
-            }
-
+            let deletedFile;
             try {
                 const dbDelete = Date.now();
-                await file.destroy();
+                deletedFile = await Metadata.findByPk(req.params.id, {
+                    attributes: ["id", "file_name", "url", "upload_date"]
+                });
+                await Metadata.destroy({ where: { id } });
                 metrics.timingDbQuery("deleteMetadata", Date.now() - dbDelete);
 
-                metrics.timingApiCall("deleteFile", Date.now() - start);
                 logDatabaseOperation('destroy', 'Metadata', id, true);
             } catch (dbError) {
                 logDatabaseOperation('destroy', 'Metadata', id, false);
@@ -306,23 +282,46 @@ router.all("/file/:id", async (req, res) => {
                 throw dbError;
             }
 
+            if (!deletedFile) {
+                metrics.timingApiCall("deleteFile", Date.now() - start);
+                logger.warn('File not found', { id });
+                res.status(404).end();
+            } else {
+                const params = {
+                    Bucket: process.env.S3_BUCKET,
+                    Key: deletedFile.url.replace(`${process.env.S3_BUCKET}/`, ""),
+                };
 
-            logger.info('File deleted successfully', { id });
-            res.status(204);
-            res.end();
+                try {
+                    const s3Delete = Date.now();
+                    await s3.deleteObject(params).promise();
+                    metrics.timingS3Call("delete", Date.now() - s3Delete);
+
+                    logS3Operation('deleteObject', params, true);
+                    logger.info('File deleted from S3', { id, fileName: deletedFile.file_name });
+                } catch (s3Error) {
+                    logS3Operation('deleteObject', params, false);
+                    logger.error('Failed to delete file from S3', {
+                        error: s3Error.message,
+                        stack: s3Error.stack,
+                        id
+                    });
+                    throw s3Error;
+                }
+
+                metrics.timingApiCall("deleteFile", Date.now() - start);
+                logger.info('File deleted successfully', { id });
+                res.status(204);
+                res.end();
+            }
         }
     } catch (error) {
-        logger.error("Get/delete file error:", {
-            error: error.message,
-            stack: error.stack,
-            code: error.code,
-            id
-        });
 
         if (error.code === "CredentialsError" ||
             error.code === "AccessDenied" ||
             error.code === "InvalidAccessKeyId" ||
             error.code === "SignatureDoesNotMatch") {
+            metrics.timingApiCall("deleteFile", Date.now() - start);
             logger.error('AWS authentication error', {
                 errorCode: error.code,
                 message: error.message,
@@ -330,7 +329,17 @@ router.all("/file/:id", async (req, res) => {
             });
             res.status(401).end();
         }
+        else if (req.method === 'GET') {
+            metrics.timingApiCall("deleteFile", Date.now() - start);
+            logger.error('Unexpected service error', {
+                error: error.message,
+                stack: error.stack,
+                id
+            });
+            res.status(503).end();
+        }
         else {
+            metrics.timingApiCall("getFile", Date.now() - start);
             logger.error('Unexpected service error', {
                 error: error.message,
                 stack: error.stack,

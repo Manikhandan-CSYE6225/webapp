@@ -1,6 +1,7 @@
 const request = require("supertest");
 const app = require("../app");
 const db = require("../models");
+const { closeStatsDClient } = require('../metrics');
 
 beforeAll(async () => {
     await db.sequelize.sync();
@@ -8,6 +9,7 @@ beforeAll(async () => {
 
 afterAll(async () => {
     await db.sequelize.close();
+    closeStatsDClient();
 });
 
 describe("Healthz API Endpoint Tests", () => {

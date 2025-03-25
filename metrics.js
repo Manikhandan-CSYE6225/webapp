@@ -1,5 +1,11 @@
 const StatsD = require('node-statsd');
 
+function closeStatsDClient() {
+    if (client) {
+        client.socket.close();
+    }
+}
+
 const client = new StatsD({
     host: 'localhost',
     port: 8125,
@@ -26,5 +32,6 @@ module.exports = {
     incrementApiCall,
     timingApiCall,
     timingDbQuery,
-    timingS3Call
+    timingS3Call,
+    closeStatsDClient
 };
