@@ -6,7 +6,14 @@
           {
             "file_path": "/opt/csye6225/webapp/application.log",
             "log_group_name": "WebAppLogs",
-            "log_stream_name": "WebAppLogStream",
+            "log_stream_name": "AppLogStream",
+            "timestamp_format": "%Y-%m-%d %H:%M:%S",
+            "multi_line_start_pattern": "^{\\\"timestamp\\\":"
+          },
+          {
+            "file_path": "/opt/csye6225/webapp/error.log",
+            "log_group_name": "WebAppLogs",
+            "log_stream_name": "ErrorLogStream",
             "timestamp_format": "%Y-%m-%d %H:%M:%S",
             "multi_line_start_pattern": "^{\\\"timestamp\\\":"
           }
@@ -15,12 +22,17 @@
     }
   },
   "metrics": {
+    "namespace": "WebAppMetrics",
     "metrics_collected": {
       "statsd": {
         "service_address": ":8125",
-        "metrics_collection_interval": 30
+        "metrics_collection_interval": 60
       }
     },
-    "namespace": "WebAppMetrics"
+    "append_dimensions": {
+      "InstanceId": "${aws:InstanceId}",
+      "InstanceType": "${aws:InstanceType}",
+      "AutoScalingGroupName": "${aws:AutoScalingGroupName}"
+    }
   }
 }
