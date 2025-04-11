@@ -1,11 +1,13 @@
 name: Build and Share AMI
 
 on:
-  push:
+  pull_request:
+    types: [ closed ]
+    branches: [ main ]
 
 jobs:
   integration-tests:
-#    if: github.event.pull_request.merged == true || github.repository == 'Manikhandan-CSYE6225/webapp'
+    if: github.event.pull_request.merged == true || github.repository == 'Manikhandan-CSYE6225/webapp'
     runs-on: ubuntu-latest
 
     services:
@@ -48,7 +50,7 @@ jobs:
         run: npm run test
 
   build-ami:
-#    if: github.event.pull_request.merged == true || github.repository == 'Manikhandan-CSYE6225/webapp'
+    if: github.event.pull_request.merged == true || github.repository == 'Manikhandan-CSYE6225/webapp'
     runs-on: ubuntu-latest
     needs: integration-tests
     outputs:
@@ -72,7 +74,7 @@ jobs:
       - name: Build AMI with Packer
         run: |
           packer init ./packer
-          packer build -var "aws_region=${{ secrets.AWS_REGION }}" -var "ami_source=ami-04b4f1a9cf54c11d0" -var "ami_instance=t2.micro" -var "ami_prefix=webapp-aws-ubuntu-nodejs" -var "ami_users=${{ secrets.AMI_USERS }}" -var "artifact_path=/home/runner/work/webapp-csye6225/webapp-csye6225/webapp.zip" ./packer | tee packer_output.txt
+          packer build -var "aws_region=${{ secrets.AWS_REGION }}" -var "ami_source=ami-04b4f1a9cf54c11d0" -var "ami_instance=t2.micro" -var "ami_prefix=webapp-aws-ubuntu-nodejs" -var "ami_users=${{ secrets.AMI_USERS }}" -var "artifact_path=/home/runner/work/webapp/webapp/webapp.zip" ./packer | tee packer_output.txt
 
       - name: Extract AMI ID
         id: extract_ami
@@ -82,11 +84,12 @@ jobs:
           echo "Created AMI: $AMI_ID"
 
   update-launch-template:
-#    if: github.event.pull_request.merged == true || github.repository == 'Manikhandan-CSYE6225/webapp'
+    if: github.event.pull_request.merged == true || github.repository == 'Manikhandan-CSYE6225/webapp'
     needs: build-ami
     runs-on: ubuntu-latest
     outputs:
       new_version: ${{ steps.create_lt_version.outputs.new_version }}
+      lt_exists: ${{ steps.check_lt.outputs.exists }}
     steps:
       - name: Configure AWS CLI
         uses: aws-actions/configure-aws-credentials@v3
@@ -95,8 +98,20 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_PROD_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
 
+      - name: Check if Launch Template exists
+        id: check_lt
+        run: |
+            if aws ec2 describe-launch-templates --launch-template-names ${{ secrets.LAUNCH_TEMPLATE_NAME }} 2>/dev/null; then
+              echo "Launch template exists"
+              echo "exists=true" >> $GITHUB_OUTPUT
+            else
+              echo "Launch template does not exist - skipping update"
+              echo "exists=false" >> $GITHUB_OUTPUT
+            fi
+
       - name: Create new Launch Template version
         id: create_lt_version
+        if: steps.check_lt.outputs.exists == 'true'
         run: |
           # Get the latest Launch Template version
           LATEST_VERSION=$(aws ec2 describe-launch-templates \
@@ -126,7 +141,7 @@ jobs:
           echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
 
   refresh-asg:
-#    if: github.event.pull_request.merged == true || github.repository == 'Manikhandan-CSYE6225/webapp'
+    if: github.event.pull_request.merged == true || github.repository == 'Manikhandan-CSYE6225/webapp'
     needs: [build-ami, update-launch-template]
     runs-on: ubuntu-latest
     steps:
@@ -137,8 +152,18 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_PROD_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
 
-      - name: Start instance refresh and wait for completion
+      - name: Check if ASG exists, start instance refresh and wait for completion
         run: |
+          if [ "${{ needs.update-launch-template.outputs.lt_exists }}" != "true" ]; then
+            echo "Launch template does not exist, skipping ASG refresh"
+            exit 0
+          fi
+          
+          if ! aws autoscaling describe-auto-scaling-groups --auto-scaling-group-names ${{ secrets.ASG_NAME }} 2>/dev/null; then
+            echo "Auto Scaling Group does not exist - skipping refresh"
+            exit 0
+          fi
+          
           # Start instance refresh
           REFRESH_ID=$(aws autoscaling start-instance-refresh \
             --auto-scaling-group-name ${{ secrets.ASG_NAME }} \
