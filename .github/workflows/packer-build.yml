@@ -51,6 +51,8 @@ jobs:
 #    if: github.event.pull_request.merged == true || github.repository == 'Manikhandan-CSYE6225/webapp'
     runs-on: ubuntu-latest
     needs: integration-tests
+    outputs:
+      ami_id: ${{ steps.extract_ami.outputs.ami_id }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -76,13 +78,15 @@ jobs:
         id: extract_ami
         run: |
           AMI_ID=$(grep -o 'ami-[0-9a-f]\+' packer_output.txt | tail -1)
-          echo "ami_id=$AMI_ID" >> $GITHUB_ENV
+          echo "ami_id=$AMI_ID" >> $GITHUB_OUTPUT
           echo "Created AMI: $AMI_ID"
 
   update-launch-template:
 #    if: github.event.pull_request.merged == true || github.repository == 'Manikhandan-CSYE6225/webapp'
     needs: build-ami
     runs-on: ubuntu-latest
+    outputs:
+      new_version: ${{ steps.create_lt_version.outputs.new_version }}
     steps:
       - name: Configure AWS CLI
         uses: aws-actions/configure-aws-credentials@v3
@@ -106,8 +110,8 @@ jobs:
           NEW_VERSION=$(aws ec2 create-launch-template-version \
             --launch-template-name ${{ secrets.LAUNCH_TEMPLATE_NAME }} \
             --source-version $LATEST_VERSION \
-            --version-description "Update AMI to $ami_id" \
-            --launch-template-data "{\"ImageId\":\"$ami_id\"}" \
+            --version-description "Update AMI to ${{ needs.build-ami.outputs.ami_id }}" \
+            --launch-template-data "{\"ImageId\":\"${{ needs.build-ami.outputs.ami_id }}\"}" \
             --query 'LaunchTemplateVersion.VersionNumber' \
             --output text)
           
@@ -119,7 +123,7 @@ jobs:
             --default-version $NEW_VERSION
           
           echo "Set version $NEW_VERSION as default"
-          echo "new_version=$NEW_VERSION" >> $GITHUB_ENV
+          echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
 
   refresh-asg:
 #    if: github.event.pull_request.merged == true || github.repository == 'Manikhandan-CSYE6225/webapp'
