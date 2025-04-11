@@ -2,8 +2,8 @@ name: Build and Share AMI
 
 on:
   pull_request:
-    types: [closed]
-    branches: [main]
+    types: [ closed ]
+    branches: [ main ]
 
 jobs:
   integration-tests:
@@ -53,6 +53,8 @@ jobs:
     if: github.event.pull_request.merged == true || github.repository == 'Manikhandan-CSYE6225/webapp'
     runs-on: ubuntu-latest
     needs: integration-tests
+    outputs:
+      ami_id: ${{ steps.extract_ami.outputs.ami_id }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -72,6 +74,125 @@ jobs:
       - name: Build AMI with Packer
         run: |
           packer init ./packer
-          packer build -var "aws_region=${{ secrets.AWS_REGION }}" -var "ami_source=ami-04b4f1a9cf54c11d0" -var "ami_instance=t2.micro" -var "ami_prefix=webapp-aws-ubuntu-nodejs" -var "ami_users=${{ secrets.AMI_USERS }}" -var "artifact_path=/home/runner/work/webapp/webapp/webapp.zip" ./packer
+          packer build -var "aws_region=${{ secrets.AWS_REGION }}" -var "ami_source=ami-04b4f1a9cf54c11d0" -var "ami_instance=t2.micro" -var "ami_prefix=webapp-aws-ubuntu-nodejs" -var "ami_users=${{ secrets.AMI_USERS }}" -var "artifact_path=/home/runner/work/webapp/webapp/webapp.zip" ./packer | tee packer_output.txt
+
+      - name: Extract AMI ID
+        id: extract_ami
+        run: |
+          AMI_ID=$(grep -o 'ami-[0-9a-f]\+' packer_output.txt | tail -1)
+          echo "ami_id=$AMI_ID" >> $GITHUB_OUTPUT
+          echo "Created AMI: $AMI_ID"
+
+  update-launch-template:
+    if: github.event.pull_request.merged == true || github.repository == 'Manikhandan-CSYE6225/webapp'
+    needs: build-ami
+    runs-on: ubuntu-latest
+    outputs:
+      new_version: ${{ steps.create_lt_version.outputs.new_version }}
+      lt_exists: ${{ steps.check_lt.outputs.exists }}
+    steps:
+      - name: Configure AWS CLI
+        uses: aws-actions/configure-aws-credentials@v3
+        with:
+          aws-access-key-id: ${{ secrets.AWS_PROD_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_PROD_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Check if Launch Template exists
+        id: check_lt
+        run: |
+            if aws ec2 describe-launch-templates --launch-template-names ${{ secrets.LAUNCH_TEMPLATE_NAME }} 2>/dev/null; then
+              echo "Launch template exists"
+              echo "exists=true" >> $GITHUB_OUTPUT
+            else
+              echo "Launch template does not exist - skipping update"
+              echo "exists=false" >> $GITHUB_OUTPUT
+            fi
+
+      - name: Create new Launch Template version
+        id: create_lt_version
+        if: steps.check_lt.outputs.exists == 'true'
+        run: |
+          # Get the latest Launch Template version
+          LATEST_VERSION=$(aws ec2 describe-launch-templates \
+            --launch-template-name ${{ secrets.LAUNCH_TEMPLATE_NAME }} \
+            --query 'LaunchTemplates[0].LatestVersionNumber' \
+            --output text)
+          
+          echo "Current latest version: $LATEST_VERSION"
+          
+          # Create a new Launch Template version with the new AMI
+          NEW_VERSION=$(aws ec2 create-launch-template-version \
+            --launch-template-name ${{ secrets.LAUNCH_TEMPLATE_NAME }} \
+            --source-version $LATEST_VERSION \
+            --version-description "Update AMI to ${{ needs.build-ami.outputs.ami_id }}" \
+            --launch-template-data "{\"ImageId\":\"${{ needs.build-ami.outputs.ami_id }}\"}" \
+            --query 'LaunchTemplateVersion.VersionNumber' \
+            --output text)
+          
+          echo "Created new Launch Template version: $NEW_VERSION"
+          
+          # Set the new version as default
+          aws ec2 modify-launch-template \
+            --launch-template-name ${{ secrets.LAUNCH_TEMPLATE_NAME }} \
+            --default-version $NEW_VERSION
+          
+          echo "Set version $NEW_VERSION as default"
+          echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
+
+  refresh-asg:
+    if: github.event.pull_request.merged == true || github.repository == 'Manikhandan-CSYE6225/webapp'
+    needs: [build-ami, update-launch-template]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Configure AWS CLI
+        uses: aws-actions/configure-aws-credentials@v3
+        with:
+          aws-access-key-id: ${{ secrets.AWS_PROD_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_PROD_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Check if ASG exists, start instance refresh and wait for completion
+        run: |
+          if [ "${{ needs.update-launch-template.outputs.lt_exists }}" != "true" ]; then
+            echo "Launch template does not exist, skipping ASG refresh"
+            exit 0
+          fi
+          
+          if ! aws autoscaling describe-auto-scaling-groups --auto-scaling-group-names ${{ secrets.ASG_NAME }} 2>/dev/null; then
+            echo "Auto Scaling Group does not exist - skipping refresh"
+            exit 0
+          fi
+          
+          # Start instance refresh
+          REFRESH_ID=$(aws autoscaling start-instance-refresh \
+            --auto-scaling-group-name ${{ secrets.ASG_NAME }} \
+            --preferences "MinHealthyPercentage=90" \
+            --query 'InstanceRefreshId' \
+            --output text)
+          
+          echo "Started instance refresh with ID: $REFRESH_ID"
+          
+          # Check refresh status and wait for completion
+          while true; do
+            STATUS=$(aws autoscaling describe-instance-refreshes \
+              --auto-scaling-group-name ${{ secrets.ASG_NAME }} \
+              --instance-refresh-ids $REFRESH_ID \
+              --query 'InstanceRefreshes[0].Status' \
+              --output text)
+          
+            echo "Current refresh status: $STATUS"
+          
+            if [ "$STATUS" == "Successful" ]; then
+              echo "Instance refresh completed successfully!"
+              break
+            elif [ "$STATUS" == "Failed" ] || [ "$STATUS" == "Cancelled" ]; then
+              echo "Instance refresh $STATUS"
+              exit 1
+            else
+              echo "Waiting for instance refresh to complete... (Current status: $STATUS)"
+              sleep 30
+            fi
+          done
 
     
