@@ -70,7 +70,7 @@ jobs:
       - name: Build AMI with Packer
         run: |
           packer init ./packer
-          packer build -var "aws_region=${{ secrets.AWS_REGION }}" -var "ami_source=ami-04b4f1a9cf54c11d0" -var "ami_instance=t2.micro" -var "ami_prefix=webapp-aws-ubuntu-nodejs" -var "ami_users=${{ secrets.AMI_USERS }}" -var "artifact_path=/home/runner/work/webapp-csye6225/webapp-csye6225/webapp-csye6225.zip" ./packer
+          packer build -var "aws_region=${{ secrets.AWS_REGION }}" -var "ami_source=ami-04b4f1a9cf54c11d0" -var "ami_instance=t2.micro" -var "ami_prefix=webapp-aws-ubuntu-nodejs" -var "ami_users=${{ secrets.AMI_USERS }}" -var "artifact_path=/home/runner/work/webapp-csye6225/webapp-csye6225/webapp.zip" ./packer
 
       - name: Extract AMI ID
         id: extract_ami
